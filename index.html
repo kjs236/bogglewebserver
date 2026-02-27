@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Boggle Controller</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background-color: #222; color: white; padding-top: 20px;}
+        input { font-size: 1.5rem; margin: 10px; padding: 10px; width: 80%; border-radius: 8px; border: none; text-align: center; text-transform: uppercase;}
+        button { font-size: 1.5rem; padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; width: 85%;}
+        button:active { background-color: #0056b3; }
+        #game-screen { display: none; } /* Hidden until they join */
+    </style>
+</head>
+<body>
+
+    <div id="login-screen">
+        <h2>Join Game</h2>
+        <input type="text" id="roomCode" placeholder="ROOM CODE" maxlength="4">
+        <input type="text" id="playerName" placeholder="YOUR NAME">
+        <button onclick="joinGame()">JOIN</button>
+    </div>
+
+    <div id="game-screen">
+        <h3 id="welcome-msg"></h3>
+        <input type="text" id="wordInput" placeholder="TYPE WORD HERE...">
+        <button onclick="submitWord()">SUBMIT</button>
+        <p id="status" style="color: #ffaa00; font-weight: bold;"></p>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io(); // Connect to the server
+        let currentRoom = "";
+        let currentPlayer = "";
+
+        function joinGame() {
+            currentRoom = document.getElementById('roomCode').value.toUpperCase();
+            currentPlayer = document.getElementById('playerName').value.toUpperCase();
+
+            if(currentRoom && currentPlayer) {
+                
+                socket.emit('joinRoom', currentRoom);
+                
+                // Swap the UI screens
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('game-screen').style.display = 'block';
+                document.getElementById('welcome-msg').innerText = "Playing as: " + currentPlayer;
+            }
+        }
+
+        function submitWord() {
+            const word = document.getElementById('wordInput').value.toUpperCase();
+            if(word) {
+                
+                socket.emit('submitWord', { 
+                    room: currentRoom, 
+                    player: currentPlayer, 
+                    word: word 
+                });
+                
+                document.getElementById('status').innerText = "Sent: " + word;
+                document.getElementById('wordInput').value = ""; // Clear box for next word
+            }
+        }
+
+        socket.on('unrealResponse', (data) => {
+            document.getElementById('status').innerText = data.message;
+        });
+    </script>
+</body>
+</html>
