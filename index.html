@@ -23,7 +23,8 @@
     <div id="game-screen">
         <h3 id="welcome-msg"></h3>
         <input type="text" id="wordInput" placeholder="TYPE WORD HERE...">
-        <button onclick="submitWord()">SUBMIT</button>
+        <div id="feedbackBox" style="display: none; padding: 10px; margin-top: 15px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 1.2rem; transition: 0.2s;"></div>
+        <button id="submitBtn" onclick="submitWord()">SUBMIT</button>
         <p id="status" style="color: #ffaa00; font-weight: bold;"></p>
     </div>
 
@@ -65,6 +66,83 @@
 
         socket.on('unrealResponse', (data) => {
             document.getElementById('status').innerText = data.message;
+        });
+        // Catch the feedback broadcast from the server
+        socket.on('displayFeedback', (data) => {
+            // Check if the message is actually meant for this specific phone
+            if (data.player === currentPlayer) { 
+                const feedbackBox = document.getElementById('feedbackBox');
+                feedbackBox.innerText = data.message;
+                feedbackBox.style.display = 'block';
+
+                // Check the message to flash the right colors
+                if (data.message === 'Valid') {
+                    feedbackBox.style.backgroundColor = '#d4edda'; // Light green background
+                    feedbackBox.style.color = '#155724';           // Dark green text
+                } else {
+                    // For "cap" and "Already Found! Try Again!"
+                    feedbackBox.style.backgroundColor = '#f8d7da'; // Light red background
+                    feedbackBox.style.color = '#721c24';           // Dark red text
+                }
+
+                // Make the warning disappear after 1.5 seconds
+                setTimeout(() => {
+                    feedbackBox.style.display = 'none';
+                }, 1500);
+            }
+        });
+        // Catch the 'lockPhones' broadcast from the server
+        socket.on('lockPhones', () => {
+            // Disable the input box and change the placeholder text
+            const wordInput = document.getElementById('wordInput');
+            wordInput.disabled = true;
+            wordInput.value = "";
+            wordInput.placeholder = "TIME'S UP!";
+            
+            // Disable the submit button and make it look greyed out
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.style.backgroundColor = '#555';
+            submitBtn.style.cursor = 'not-allowed';
+
+            // Update the status text
+            const statusText = document.getElementById('status');
+            statusText.innerText = "Pencils down! Look at the main screen.";
+            statusText.style.color = "#ff4444"; // Change text to bright red
+        });
+        // Trigger the 'Submit' button when Enter is pressed on the word input
+        document.getElementById("wordInput").addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault(); // Prevents the mobile keyboard from doing anything weird
+                submitWord();
+            }
+        });
+
+        // Trigger the 'Join' button when Enter is pressed on the player name input
+        document.getElementById("playerName").addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                joinGame();
+            }
+        });
+        // Catch the 'unlockPhones' broadcast to reset the UI for a new round
+        socket.on('unlockPhones', () => {
+            // Re-enable the input box and fix the placeholder
+            const wordInput = document.getElementById('wordInput');
+            wordInput.disabled = false;
+            wordInput.value = "";
+            wordInput.placeholder = "TYPE WORD HERE...";
+            
+            // Re-enable the submit button and restore its blue color
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = false;
+            submitBtn.style.backgroundColor = '#007bff';
+            submitBtn.style.cursor = 'pointer';
+
+            // Clear the "Pencils down" warning
+            const statusText = document.getElementById('status');
+            statusText.innerText = "Ready for the next round!";
+            statusText.style.color = "#ffaa00"; // Back to original orange
         });
     </script>
 </body>

@@ -19,15 +19,33 @@ io.on('connection', (socket) => {
         console.log(`🔌 Socket ${socket.id} joined Room: ${roomCode}`);
     });
 
+    // Catch the feedback from Unreal Engine
+    socket.on('wordFeedback', (data) => {
+      console.log(`Feedback from Unreal for ${data.player}: ${data.message}`);
+      
+    // Relay this package to all connected phones
+      io.emit('displayFeedback', data); 
+    });
+    // Catch the 'Time is Up' signal from Unreal Engine
+    socket.on('roundEnded', () => {
+        console.log(`🛑 Round Ended signal received from Unreal!`);
+        
+        io.emit('lockPhones'); 
+    });
+    // Catch the 'New Round' signal from Unreal Engine
+    socket.on('roundStarted', () => {
+        console.log(`🟢 New round started! Unlocking phones...`);
+        
+        // Broadcast the unlock signal to all phones
+        io.emit('unlockPhones'); 
+    });
     // submits a word
     socket.on('submitWord', (data) => {
         console.log(`📝 Word received in Room [${data.room}]: "${data.word}" from Player: ${data.player}`);
         
-        // Broadcast that exact word payload to everyone in that room (which will include Unreal Engine)
         io.to(data.room).emit('wordToUnreal', data);
     });
 
-    // When someone closes the tab
     socket.on('disconnect', () => {
         console.log(`❌ User disconnected: ${socket.id}`);
     });
