@@ -40,7 +40,7 @@
 
             if(currentRoom && currentPlayer) {
                 
-                socket.emit('joinRoom', currentRoom);
+                socket.emit('joinRoom', { room: currentRoom, player: currentPlayer });
                 
                 // Swap the UI screens
                 document.getElementById('login-screen').style.display = 'none';
