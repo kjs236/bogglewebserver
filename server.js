@@ -66,6 +66,8 @@ io.on('connection', (socket) => {
         if (socket.playerName && socket.roomCode && activeRooms[socket.roomCode]) {
             activeRooms[socket.roomCode] = activeRooms[socket.roomCode].filter(name => name !== socket.playerName);
             console.log(`🧹 Cleared "${socket.playerName}" from Room ${socket.roomCode} roster.`);
+
+            io.to(socket.roomCode).emit('playerLeft', { playerName: socket.playerName });
         }
     });
 
