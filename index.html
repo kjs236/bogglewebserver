@@ -24,7 +24,7 @@
         <h3 id="welcome-msg"></h3>
         <input type="text" id="wordInput" placeholder="TYPE WORD HERE...">
         <div id="feedbackBox" style="display: none; padding: 10px; margin-top: 15px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 1.2rem; transition: 0.2s;"></div>
-        <button id="submitBtn" onclick="submitWord()">SUBMIT</button>
+        <button id="submitBtn" onclick="submitWord()" onmousedown="event.preventDefault()" ontouchstart="event.preventDefault()" >SUBMIT</button>
         <p id="status" style="color: #ffaa00; font-weight: bold;"></p>
     </div>
 
@@ -61,8 +61,25 @@
                 
                 document.getElementById('status').innerText = "Sent: " + word;
                 document.getElementById('wordInput').value = ""; // Clear box for next word
+                document.getElementById('wordInput').focus();
             }
         }
+
+        socket.on('nameError', (data) => {
+            // Throw a pop-up alert to the phone
+            alert(data.message);
+            
+            // Swap the UI screens BACK to the login screen
+            document.getElementById('game-screen').style.display = 'none';
+            document.getElementById('login-screen').style.display = 'block';
+            
+            // Clear the name box so they can type a new one
+            document.getElementById('playerName').value = "";
+            
+            // Reset the local variables
+            currentRoom = "";
+            currentPlayer = "";
+        });
 
         socket.on('unrealResponse', (data) => {
             document.getElementById('status').innerText = data.message;
