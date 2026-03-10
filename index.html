@@ -24,7 +24,7 @@
         <h3 id="welcome-msg"></h3>
         <input type="text" id="wordInput" placeholder="TYPE WORD HERE...">
         <div id="feedbackBox" style="display: none; padding: 10px; margin-top: 15px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 1.2rem; transition: 0.2s;"></div>
-        <button id="submitBtn" onclick="submitWord()" onmousedown="event.preventDefault()" ontouchstart="event.preventDefault()" >SUBMIT</button>
+        <button id="submitBtn" onmousedown="event.preventDefault(); submitWord();" ontouchstart="event.preventDefault(); submitWord();">SUBMIT</button>
         <p id="status" style="color: #ffaa00; font-weight: bold;"></p>
     </div>
 
