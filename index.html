@@ -9,6 +9,20 @@
         button { font-size: 1.5rem; padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; width: 85%;}
         button:active { background-color: #0056b3; }
         #game-screen { display: none; } /* Hidden until they join */
+        /* Shake animation for wrong words */
+        .error-shake {
+            animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+            background-color: #ffe6e6 !important; 
+            border: 2px solid #ff0000 !important; 
+            color: #900 !important; 
+        }
+        
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+            40%, 60% { transform: translate3d(6px, 0, 0); }
+        }
     </style>
 </head>
 <body>
@@ -97,9 +111,27 @@
                     feedbackBox.style.backgroundColor = '#d4edda'; // Light green background
                     feedbackBox.style.color = '#155724';           // Dark green text
                 } else {
-                    // For "cap" and "Already Found! Try Again!"
+                    // It's a wrong or duplicate word!
                     feedbackBox.style.backgroundColor = '#f8d7da'; // Light red background
                     feedbackBox.style.color = '#721c24';           // Dark red text
+                    
+                    // --- NEW HAPTICS & SHAKE LOGIC ---
+                    
+                    // Hardware Vibrate (Works on Android)
+                    if (navigator.vibrate) {
+                        navigator.vibrate(100); 
+                    }
+                    
+                    // Shake the input box
+                    const inputField = document.getElementById('wordInput');
+                    inputField.classList.remove('error-shake');
+                    void inputField.offsetWidth; // Force reflow so it restarts if they spam it
+                    inputField.classList.add('error-shake');
+                    
+                    // Remove the red shake class after 100ms so it goes back to normal
+                    setTimeout(() => {
+                        inputField.classList.remove('error-shake');
+                    }, 100);
                 }
 
                 // Make the warning disappear after 1.0 seconds
