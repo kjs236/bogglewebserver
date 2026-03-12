@@ -9,6 +9,21 @@
         button { font-size: 1.5rem; padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; width: 85%;}
         button:active { background-color: #0056b3; }
         #game-screen { display: none; } /* Hidden until they join */
+        @media screen and (orientation: landscape) and (max-height: 600px) {#welcome-msg { display: none; }
+            
+            #game-screen {
+                display: flex;
+                flex-direction: row;
+                flex-wrap: wrap; /* Allows text to wrap to the next line if needed */
+                justify-content: center;
+                align-items: center;
+                padding-top: 10px;
+            }
+
+            #wordInput { width: 55%; margin: 5px; }
+            #submitBtn { width: 30%; margin: 5px; }
+
+            #feedbackBox, #status { width: 100%; margin-top: 5px;}
     </style>
 </head>
 <body>
@@ -50,7 +65,9 @@
         }
 
         function submitWord() {
-            const word = document.getElementById('wordInput').value.toUpperCase();
+            let rawWord = document.getElementById('wordInput').value.toUpperCase();
+            
+            const word = rawWord.trim().replace(/\s+/g, '')
             if(word) {
                 
                 socket.emit('submitWord', { 
@@ -79,6 +96,24 @@
             // Reset the local variables
             currentRoom = "";
             currentPlayer = "";
+        });
+
+        socket.on('server_state', (data) => {
+            let inputBox = document.getElementById('wordInput'); // Use your actual input ID
+            let submitButton = document.getElementById('submitBtn'); // Use your actual button ID
+
+    // Failsafe 1: Unreal is PLAYING, but the UI is locked!
+            if (data.gameState === "Playing" && inputBox.disabled === true) {
+                console.log("Heartbeat Failsafe: Unlocking UI!");
+                inputBox.disabled = false;
+                if(submitButton) submitButton.disabled = false;
+    } 
+    // Failsafe 2: Unreal is NOT PLAYING, but the UI is left open!
+            else if (data.gameState !== "Playing" && inputBox.disabled === false) {
+                console.log("Heartbeat Failsafe: Locking UI!");
+                inputBox.disabled = true;
+                if(submitButton) submitButton.disabled = true;
+            }
         });
 
         socket.on('unrealResponse', (data) => {
@@ -127,6 +162,7 @@
             statusText.innerText = "Pencils down! Look at the main screen.";
             statusText.style.color = "#ff4444"; // Change text to bright red
         });
+
         // Trigger the 'Submit' button when Enter is pressed on the word input
         document.getElementById("wordInput").addEventListener("keypress", function(event) {
             if (event.key === "Enter") {
@@ -142,6 +178,7 @@
                 joinGame();
             }
         });
+
         // Catch the 'unlockPhones' broadcast to reset the UI for a new round
         socket.on('unlockPhones', () => {
             // Re-enable the input box and fix the placeholder
@@ -160,6 +197,12 @@
             const statusText = document.getElementById('status');
             statusText.innerText = "Ready for the next round!";
             statusText.style.color = "#ffaa00"; // Back to original orange
+        });
+
+        document.getElementById('wordInput').addEventListener('focus', () => {
+            setTimeout(() => {
+                document.getElementById('wordInput').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 300); 
         });
     </script>
 </body>

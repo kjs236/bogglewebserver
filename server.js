@@ -70,6 +70,13 @@ io.on('connection', (socket) => {
             io.to(socket.roomCode).emit('playerLeft', { playerName: socket.playerName });
         }
     });
+    
+    socket.on('server_state', (data) => {
+    // io.emit sends it to EVERY connected phone
+        io.emit('server_state', data); 
+    });
+    
+
 
     // Catch the feedback from Unreal Engine
     socket.on('wordFeedback', (data) => {
