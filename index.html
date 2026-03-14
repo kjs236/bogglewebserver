@@ -4,17 +4,30 @@
     <title>Boggle Controller</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background-color: #222; color: white; padding-top: 20px; min-height: 100vh; margin: 0; box-sizing: border-box;}
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            text-align: center; 
+            background-color: #222; 
+            color: white; 
+            padding-top: 20px;
+            min-height: 100vh; 
+            margin: 0; 
+            box-sizing: border-box;
+        }
+        
         input { font-size: 1.5rem; margin: 10px; padding: 10px; width: 80%; border-radius: 8px; border: none; text-align: center; text-transform: uppercase;}
         button { font-size: 1.5rem; padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; width: 85%;}
         button:active { background-color: #0056b3; }
         #game-screen { display: none; } /* Hidden until they join */
-        @media screen and (orientation: landscape) and (max-height: 600px) {#welcome-msg { display: none; }
+        
+        /* --- MOBILE LANDSCAPE RULES --- */
+        @media screen and (orientation: landscape) and (max-height: 600px) {
+            #welcome-msg { display: none; }
             
             #game-screen {
                 display: flex;
                 flex-direction: row;
-                flex-wrap: wrap; /* Allows text to wrap to the next line if needed */
+                flex-wrap: wrap; 
                 justify-content: center;
                 align-items: center;
                 padding-top: 10px;
@@ -22,8 +35,10 @@
 
             #wordInput { width: 55%; margin: 5px; }
             #submitBtn { width: 30%; margin: 5px; }
-
             #feedbackBox, #status { width: 100%; margin-top: 5px;}
+        } 
+        /* --- END MOBILE LANDSCAPE RULES --- */
+
         /* Shake animation for wrong words */
         .error-shake {
             animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
@@ -38,6 +53,7 @@
             30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
             40%, 60% { transform: translate3d(6px, 0, 0); }
         }
+        
         /* THE ON FIRE PULSE ANIMATION */
         body.on-fire-pulse {
             animation: fireGlow 2s ease-out 1;
@@ -130,13 +146,13 @@
             let inputBox = document.getElementById('wordInput'); // Use your actual input ID
             let submitButton = document.getElementById('submitBtn'); // Use your actual button ID
 
-    // Failsafe 1: Unreal is PLAYING, but the UI is locked!
+            // Failsafe 1: Unreal is PLAYING, but the UI is locked!
             if (data.gameState === "Playing" && inputBox.disabled === true) {
                 console.log("Heartbeat Failsafe: Unlocking UI!");
                 inputBox.disabled = false;
                 if(submitButton) submitButton.disabled = false;
-    } 
-    // Failsafe 2: Unreal is NOT PLAYING, but the UI is left open!
+            } 
+            // Failsafe 2: Unreal is NOT PLAYING, but the UI is left open!
             else if (data.gameState !== "Playing" && inputBox.disabled === false) {
                 console.log("Heartbeat Failsafe: Locking UI!");
                 inputBox.disabled = true;
@@ -147,6 +163,7 @@
         socket.on('unrealResponse', (data) => {
             document.getElementById('status').innerText = data.message;
         });
+
         // Catch the feedback broadcast from the server
         socket.on('displayFeedback', (data) => {
             // Check if the message is actually meant for this specific phone
@@ -159,6 +176,7 @@
                 if (data.message === 'Valid') {
                     feedbackBox.style.backgroundColor = '#d4edda'; // Light green background
                     feedbackBox.style.color = '#155724';           // Dark green text
+                    
                     // "ON FIRE" SLIDING WINDOW LOGIC
                     const currentTime = Date.now();
                     validWordTimes.push(currentTime); 
@@ -201,6 +219,7 @@
                 }, 1000);
             }
         });
+
         // Catch the 'lockPhones' broadcast from the server
         socket.on('lockPhones', () => {
             // Disable the input box and change the placeholder text
@@ -262,6 +281,7 @@
                 document.getElementById('wordInput').scrollIntoView({ behavior: 'smooth', block: 'center' });
             }, 300); 
         });
+
         function triggerOnFirePulse() {
             console.log("PLAYER IS ON FIRE! 3 words in 8 seconds!");
             
