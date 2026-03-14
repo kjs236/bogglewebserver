@@ -4,7 +4,7 @@
     <title>Boggle Controller</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background-color: #222; color: white; padding-top: 20px;}
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background-color: #222; color: white; padding-top: 20px; min-height: 100vh; margin: 0; box-sizing: border-box;}
         input { font-size: 1.5rem; margin: 10px; padding: 10px; width: 80%; border-radius: 8px; border: none; text-align: center; text-transform: uppercase;}
         button { font-size: 1.5rem; padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; width: 85%;}
         button:active { background-color: #0056b3; }
@@ -38,6 +38,19 @@
             30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
             40%, 60% { transform: translate3d(6px, 0, 0); }
         }
+        /* THE ON FIRE PULSE ANIMATION */
+        body.on-fire-pulse {
+            animation: fireGlow 2s ease-out 1;
+        }
+
+        @keyframes fireGlow {
+            0% { box-shadow: inset 0 0 0px transparent; }
+            10% { box-shadow: inset 0 0 40px #28a745, inset 0 0 80px #28a745; }
+            30% { box-shadow: inset 0 0 15px #28a745; }
+            50% { box-shadow: inset 0 0 40px #28a745, inset 0 0 80px #28a745; }
+            70% { box-shadow: inset 0 0 15px #28a745; }
+            100% { box-shadow: inset 0 0 0px transparent; }
+        }
     </style>
 </head>
 <body>
@@ -62,6 +75,7 @@
         const socket = io(); // Connect to the server
         let currentRoom = "";
         let currentPlayer = "";
+        let validWordTimes = [];
 
         function joinGame() {
             currentRoom = document.getElementById('roomCode').value.toUpperCase();
@@ -145,6 +159,18 @@
                 if (data.message === 'Valid') {
                     feedbackBox.style.backgroundColor = '#d4edda'; // Light green background
                     feedbackBox.style.color = '#155724';           // Dark green text
+                    // "ON FIRE" SLIDING WINDOW LOGIC
+                    const currentTime = Date.now();
+                    validWordTimes.push(currentTime); 
+            
+                    // Throw away any timestamps older than 8000ms (8 seconds)
+                    validWordTimes = validWordTimes.filter(time => currentTime - time <= 8000);
+            
+                    // If there are 3 or more valid words within that 8-second window...
+                    if (validWordTimes.length >= 3) {
+                        triggerOnFirePulse(); 
+                        validWordTimes = [];  
+                    } 
                 } else {
                     // It's a wrong or duplicate word!
                     feedbackBox.style.backgroundColor = '#f8d7da'; // Light red background
@@ -236,6 +262,22 @@
                 document.getElementById('wordInput').scrollIntoView({ behavior: 'smooth', block: 'center' });
             }, 300); 
         });
+        function triggerOnFirePulse() {
+            console.log("PLAYER IS ON FIRE! 3 words in 8 seconds!");
+            
+            // Add the glowing class to the body
+            document.body.classList.add('on-fire-pulse');
+            
+            // Optional: A longer haptic vibration for the combo!
+            if (navigator.vibrate) {
+                navigator.vibrate([100, 50, 100, 50, 200]); 
+            }
+            
+            // Remove the glow after 2 seconds
+            setTimeout(() => {
+                document.body.classList.remove('on-fire-pulse');
+            }, 2000);
+        }
     </script>
 </body>
 </html>
