@@ -7,6 +7,7 @@ const server = http.createServer(app);
 const io = new Server(server);
 const activeRooms = {};
 
+
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/index.html');
 });
@@ -16,16 +17,20 @@ io.on('connection', (socket) => {
 
     // asks to join a specific Room Code
     socket.on('joinRoom', (data) => {
-        // Check if data is just a regular string (which means it's Unreal Engine connecting)
         if (typeof data === 'string') {
             socket.join(data);
             console.log(`🖥️ UNREAL ENGINE joined Room: ${data}`);
+            
+            socket.isHost = true;         
+            socket.roomCode = data;       
+            socket.to(data).emit('host_reconnected'); // Tell phones to unlock
+            // ----------------------
             
             // Create a blank roster for this room if it doesn't exist yet
             if (!activeRooms[data]) {
                 activeRooms[data] = []; 
             }
-        } 
+        }
         // Otherwise, it's a phone sending the {room, player} data box
         else {
             const room = data.room;
@@ -57,13 +62,15 @@ io.on('connection', (socket) => {
         }
     });
 
-    // ... (Keep all your existing wordFeedback, roundEnded, roundStarted, submitWord nodes exactly as they are) ...
-
     socket.on('disconnect', () => {
         console.log(`❌ User disconnected: ${socket.id}`);
         
-        // If a phone disconnects (or refreshes), remove their name from the room's roster so they can rejoin
-        if (socket.playerName && socket.roomCode && activeRooms[socket.roomCode]) {
+        if (socket.isHost) {
+            console.log(`🚨 HOST DROPPED in Room ${socket.roomCode}! Locking phones...`);
+            socket.to(socket.roomCode).emit('host_disconnected'); // Lock the phones!
+        }
+        
+        else if (socket.playerName && socket.roomCode && activeRooms[socket.roomCode]) {
             activeRooms[socket.roomCode] = activeRooms[socket.roomCode].filter(name => name !== socket.playerName);
             console.log(`🧹 Cleared "${socket.playerName}" from Room ${socket.roomCode} roster.`);
 

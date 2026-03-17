@@ -70,7 +70,12 @@
     </style>
 </head>
 <body>
-
+    
+    <div id="disconnectOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); color: white; z-index: 9999; flex-direction: column; justify-content: center; align-items: center; text-align: center; font-family: sans-serif;">
+        <h2 style="margin-bottom: 10px;">Connection Lost</h2>
+        <p>Waiting for Main Board to reconnect...</p>
+    </div>
+    
     <div id="login-screen">
         <h2>Join Game</h2>
         <input type="text" id="roomCode" placeholder="ROOM CODE" maxlength="4">
@@ -79,7 +84,11 @@
     </div>
 
     <div id="game-screen">
-        <h3 id="welcome-msg"></h3>
+        <div style="margin-bottom: 20px; background-color: #333; padding: 10px; border-radius: 8px; width: 85%; margin-left: auto; margin-right: auto;">
+            <h3 id="welcome-msg" style="margin: 0; color: #fff;"></h3>
+            <h4 id="room-display" style="margin: 5px 0 10px 0; color: #ffaa00; letter-spacing: 2px;"></h4>
+            <button onclick="leaveRoom()" style="font-size: 1rem; padding: 8px 16px; background-color: #dc3545; width: auto;">Wrong Room? Leave</button>
+        </div>
         <input type="text" id="wordInput" placeholder="TYPE WORD HERE...">
         <div id="feedbackBox" style="display: none; padding: 10px; margin-top: 15px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 1.2rem; transition: 0.2s;"></div>
         <button id="submitBtn" onmousedown="event.preventDefault(); submitWord();" ontouchstart="event.preventDefault(); submitWord();">SUBMIT</button>
@@ -98,14 +107,22 @@
             currentPlayer = document.getElementById('playerName').value.toUpperCase();
 
             if(currentRoom && currentPlayer) {
-                
                 socket.emit('joinRoom', { room: currentRoom, player: currentPlayer });
                 
                 // Swap the UI screens
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('game-screen').style.display = 'block';
-                document.getElementById('welcome-msg').innerText = "Playing as: " + currentPlayer;
+                
+                // Update the display text ---
+                document.getElementById('welcome-msg').innerText = "Player: " + currentPlayer;
+                document.getElementById('room-display').innerText = "ROOM: " + currentRoom;
             }
+        }
+
+        function leaveRoom() {
+            // Reloading the page safely severs the socket, clears their name from the server, 
+            // and resets the UI back to the login screen instantly.
+            window.location.reload();
         }
 
         function submitWord() {
@@ -274,6 +291,28 @@
             const statusText = document.getElementById('status');
             statusText.innerText = "Ready for the next round!";
             statusText.style.color = "#ffaa00"; // Back to original orange
+        });
+
+        socket.on('host_disconnected', () => {
+            console.log("Host disconnected! Blacking out phone UI...");
+            
+            // Change display
+            document.getElementById('disconnectOverlay').style.display = 'flex'; 
+            
+            // Lock the inputs
+            document.getElementById('wordInput').disabled = true;
+            document.getElementById('submitBtn').disabled = true;
+        });
+
+        socket.on('host_reconnected', () => {
+            console.log("Host reconnected! Restoring phone UI...");
+            
+            // Hide the blackout screen
+            document.getElementById('disconnectOverlay').style.display = 'none'; 
+            
+            // Unlock the inputs
+            document.getElementById('wordInput').disabled = false;
+            document.getElementById('submitBtn').disabled = false;
         });
 
         document.getElementById('wordInput').addEventListener('focus', () => {
