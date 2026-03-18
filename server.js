@@ -4,7 +4,10 @@ const { Server } = require('socket.io');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+const io = new Server(server, {
+  pingInterval: 2000,  
+  pingTimeout: 4000    
+});
 const activeRooms = {};
 
 
@@ -24,39 +27,37 @@ io.on('connection', (socket) => {
             socket.isHost = true;         
             socket.roomCode = data;       
             socket.to(data).emit('host_reconnected'); // Tell phones to unlock
-            // ----------------------
             
-            // Create a blank roster for this room if it doesn't exist yet
+            
+            
             if (!activeRooms[data]) {
                 activeRooms[data] = []; 
             }
         }
-        // Otherwise, it's a phone sending the {room, player} data box
+        
         else {
             const room = data.room;
             const player = data.player;
 
-            // Failsafe: create room array if it somehow doesn't exist
             if (!activeRooms[room]) activeRooms[room] = [];
 
-            // THE BOUNCER: Check if the name is already in the array
+            // Check if the name is already in the array
             if (activeRooms[room].includes(player)) {
                 console.log(`⚠️ BOUNCED: Name "${player}" is already taken in Room: ${room}`);
-                // Emit an error ONLY back to the specific phone that tried to join
+                
                 socket.emit('nameError', { message: 'Name already taken! Please choose another.' });
             } 
             else {
-                // Name is free! Add them to the tracker
+                
                 activeRooms[room].push(player);
                 
-                // Save their info to their specific socket so we remember who they are later
+                // Save their info
                 socket.playerName = player;
                 socket.roomCode = room;
 
                 socket.join(room);
                 console.log(`📱 ${player} joined Room: ${room}`);
                 
-                // Broadcast the new player's name back to Unreal Engine
                 io.to(room).emit('playerJoined', { playerName: player });
             }
         }
@@ -79,31 +80,27 @@ io.on('connection', (socket) => {
     });
     
     socket.on('server_state', (data) => {
-    // io.emit sends it to EVERY connected phone
-        io.emit('server_state', data); 
+        socket.to(socket.roomCode).emit('server_state', data); 
     });
-    
-
-
-    // Catch the feedback from Unreal Engine
+   
     socket.on('wordFeedback', (data) => {
         console.log(`Feedback from Unreal for ${data.player}: ${data.message}`);
         
-        // Relay this package to all connected phones
-        io.emit('displayFeedback', data); 
+        socket.to(socket.roomCode).emit('displayFeedback', data); 
     });
 
-    // Catch the 'Time is Up' signal from Unreal Engine
     socket.on('roundEnded', () => {
-        console.log(`🛑 Round Ended signal received from Unreal!`);
-        io.emit('lockPhones'); 
+        console.log(`🛑 Round Ended signal received from Unreal in Room ${socket.roomCode}!`);
+        
+        // Lock ONLY the phones in this specific room
+        socket.to(socket.roomCode).emit('lockPhones'); 
     });
 
-    // Catch the 'New Round' signal from Unreal Engine
     socket.on('roundStarted', () => {
-        console.log(`🟢 New round started! Unlocking phones...`);
-        // Broadcast the unlock signal to all phones
-        io.emit('unlockPhones'); 
+        console.log(`🟢 New round started in Room ${socket.roomCode}! Unlocking phones...`);
+        
+        // Broadcast the unlock signal ONLY to phones in this room
+        socket.to(socket.roomCode).emit('unlockPhones'); 
     });
 
     // submits a word
