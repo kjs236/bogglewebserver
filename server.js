@@ -111,6 +111,9 @@ io.on('connection', (socket) => {
 
 }); 
 
+setInterval(() => {
+    io.emit('server_heartbeat');
+}, 1000);
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
