@@ -103,9 +103,9 @@
             <h4 id="room-display" style="margin: 5px 0 10px 0; color: #ffaa00; letter-spacing: 2px;"></h4>
             <button onclick="leaveRoom()" style="font-size: 1rem; padding: 8px 16px; background-color: #dc3545; width: auto;">Wrong Room? Leave</button>
         </div>
-        <input type="text" id="wordInput" placeholder="TYPE WORD HERE...">
+        <input type="text" id="wordInput" placeholder="TYPE WORD HERE..." disabled>
         <div id="feedbackBox" style="display: none; padding: 10px; margin-top: 15px; border-radius: 8px; text-align: center; font-weight: bold; font-size: 1.2rem; transition: 0.2s;"></div>
-        <button id="submitBtn" onmousedown="event.preventDefault(); submitWord();" ontouchstart="event.preventDefault(); submitWord();">SUBMIT</button>
+        <button id="submitBtn" disabled onmousedown="event.preventDefault(); submitWord();" ontouchstart="event.preventDefault(); submitWord();">SUBMIT</button>
         <p id="status" style="color: #ffaa00; font-weight: bold;"></p>
     </div>
 
@@ -140,6 +140,8 @@
         }
 
         function submitWord() {
+            if (currentGameState !== 'Playing') return;
+            
             let rawWord = document.getElementById('wordInput').value.toUpperCase();
             
             const word = rawWord.trim().replace(/\s+/g, '')
@@ -173,7 +175,10 @@
             currentPlayer = "";
         });
 
+        let currentGameState = null;
+
         socket.on('server_state', (data) => {
+            currentGameState = data.gameState;
             let inputBox = document.getElementById('wordInput');
             let submitButton = document.getElementById('submitBtn');
             
@@ -312,12 +317,11 @@
         socket.on('host_reconnected', () => {
             console.log("Host reconnected! Restoring phone UI...");
             
-            // Hide the blackout screen
             document.getElementById('disconnectOverlay').style.display = 'none'; 
             
-            // Unlock the inputs
-            document.getElementById('wordInput').disabled = false;
-            document.getElementById('submitBtn').disabled = false;
+            const isPlaying = currentGameState === 'Playing';
+            document.getElementById('wordInput').disabled = !isPlaying;
+            document.getElementById('submitBtn').disabled = !isPlaying;
         });
 
         document.getElementById('wordInput').addEventListener('focus', () => {
@@ -332,7 +336,7 @@
             // Add the glowing class to the body
             document.body.classList.add('on-fire-pulse');
             
-            // Optional: A longer haptic vibration for the combo!
+            
             if (navigator.vibrate) {
                 navigator.vibrate([100, 50, 100, 50, 200]); 
             }
