@@ -5,10 +5,11 @@ const { Server } = require('socket.io');
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
-  pingInterval: 2000,  
-  pingTimeout: 4000    
+  pingInterval: 1500,  
+  pingTimeout: 3000    
 });
 const activeRooms = {};
+const roomHostStatus = {};
 
 
 app.get('/', (req, res) => {
@@ -25,7 +26,8 @@ io.on('connection', (socket) => {
             console.log(`🖥️ UNREAL ENGINE joined Room: ${data}`);
             
             socket.isHost = true;         
-            socket.roomCode = data;       
+            socket.roomCode = data;  
+            roomHostStatus[data] = true;     
             socket.to(data).emit('host_reconnected'); // Tell phones to unlock
             
             
@@ -68,6 +70,7 @@ io.on('connection', (socket) => {
         
         if (socket.isHost) {
             console.log(`🚨 HOST DROPPED in Room ${socket.roomCode}! Locking phones...`);
+            roomHostStatus[socket.roomCode] = false;
             socket.to(socket.roomCode).emit('host_disconnected'); // Lock the phones!
         }
         
@@ -86,6 +89,13 @@ io.on('connection', (socket) => {
         lastGameState = data.gameState;
 
         socket.to(socket.roomCode).emit('server_state', data); 
+    });
+
+    socket.on('requestState', (data) => {
+        const hostUp = roomHostStatus[data.room] === true;
+        if (!hostUp) {
+            socket.emit('host_disconnected');
+        }
     });
    
     socket.on('wordFeedback', (data) => {

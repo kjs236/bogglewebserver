@@ -122,7 +122,7 @@
 
             if(currentRoom && currentPlayer) {
                 socket.emit('joinRoom', { room: currentRoom, player: currentPlayer });
-                
+                socket.emit('requestState', { room: currentRoom });
                 // Swap the UI screens
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('game-screen').style.display = 'block';
@@ -197,6 +197,12 @@
             } else if (inputBox.placeholder === "Round Ended!") {
                 
                 inputBox.placeholder = "Enter word..."; 
+            }
+        });
+
+        socket.on('connect', () => {
+            if (currentRoom) {
+                socket.emit('requestState', { room: currentRoom });
             }
         });
 
