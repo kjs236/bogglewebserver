@@ -17,6 +17,20 @@
         
         input { font-size: 1.5rem; margin: 10px; padding: 10px; width: 80%; border-radius: 8px; border: none; text-align: center; text-transform: uppercase;}
         button { font-size: 1.5rem; padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; width: 85%;}
+        button:disabled {
+            background-color: #555 !important; 
+            color: #888 !important; 
+            cursor: not-allowed !important;
+            animation: none !important; 
+            box-shadow: none !important;
+            transform: none !important;
+        }
+
+        input:disabled {
+            background-color: #333 !important;
+            color: #777 !important;
+            cursor: not-allowed;
+        }
         button:active { background-color: #0056b3; }
         #game-screen { display: none; } /* Hidden until they join */
         
@@ -160,25 +174,52 @@
         });
 
         socket.on('server_state', (data) => {
-            let inputBox = document.getElementById('wordInput'); // Use your actual input ID
-            let submitButton = document.getElementById('submitBtn'); // Use your actual button ID
+            let inputBox = document.getElementById('wordInput');
+            let submitButton = document.getElementById('submitBtn');
+            
+            const isPlaying = data.gameState === "Playing";
 
-            // Failsafe 1: Unreal is PLAYING, but the UI is locked!
-            if (data.gameState === "Playing" && inputBox.disabled === true) {
-                console.log("Heartbeat Failsafe: Unlocking UI!");
-                inputBox.disabled = false;
-                if(submitButton) submitButton.disabled = false;
-            } 
-            // Failsafe 2: Unreal is NOT PLAYING, but the UI is left open!
-            else if (data.gameState !== "Playing" && inputBox.disabled === false) {
-                console.log("Heartbeat Failsafe: Locking UI!");
-                inputBox.disabled = true;
-                if(submitButton) submitButton.disabled = true;
+            // Set the disabled property to the OPPOSITE of isPlaying.
+            // If playing = true, disabled = false. If playing = false, disabled = true.
+            inputBox.disabled = !isPlaying;
+            if (submitButton) {
+                submitButton.disabled = !isPlaying;
+            }
+
+            
+            if (!isPlaying) {
+                inputBox.placeholder = "Round Ended!";
+            } else if (inputBox.placeholder === "Round Ended!") {
+                
+                inputBox.placeholder = "Enter word..."; 
             }
         });
 
         socket.on('unrealResponse', (data) => {
             document.getElementById('status').innerText = data.message;
+        });
+
+        socket.on('lockPhones', () => {
+            const submitBtn = document.getElementById('submitBtn');
+            const wordInput = document.getElementById('wordInput');
+            
+            submitBtn.disabled = true;
+            wordInput.disabled = true; 
+            
+            
+            wordInput.placeholder = "Round Ended!"; 
+        });
+
+        // When the new round starts, wake it back up
+        socket.on('unlockPhones', () => {
+            const submitBtn = document.getElementById('submitBtn');
+            const wordInput = document.getElementById('wordInput');
+            
+            submitBtn.disabled = false;
+            wordInput.disabled = false;
+            
+            wordInput.placeholder = "Enter word..."; 
+            wordInput.value = ""; // Clear out any junk left in the box
         });
 
         // Catch the feedback broadcast from the server
