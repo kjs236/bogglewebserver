@@ -78,8 +78,13 @@ io.on('connection', (socket) => {
             io.to(socket.roomCode).emit('playerLeft', { playerName: socket.playerName });
         }
     });
+
+    let lastGameState = null;
     
     socket.on('server_state', (data) => {
+        if (data.gameState === lastGameState) return; // nothing changed
+        lastGameState = data.gameState;
+
         socket.to(socket.roomCode).emit('server_state', data); 
     });
    
