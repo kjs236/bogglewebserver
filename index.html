@@ -199,29 +199,6 @@
             document.getElementById('status').innerText = data.message;
         });
 
-        socket.on('lockPhones', () => {
-            const submitBtn = document.getElementById('submitBtn');
-            const wordInput = document.getElementById('wordInput');
-            
-            submitBtn.disabled = true;
-            wordInput.disabled = true; 
-            
-            
-            wordInput.placeholder = "Round Ended!"; 
-        });
-
-        // When the new round starts, wake it back up
-        socket.on('unlockPhones', () => {
-            const submitBtn = document.getElementById('submitBtn');
-            const wordInput = document.getElementById('wordInput');
-            
-            submitBtn.disabled = false;
-            wordInput.disabled = false;
-            
-            wordInput.placeholder = "Enter word..."; 
-            wordInput.value = ""; // Clear out any junk left in the box
-        });
-
         // Catch the feedback broadcast from the server
         socket.on('displayFeedback', (data) => {
             // Check if the message is actually meant for this specific phone
@@ -278,24 +255,30 @@
             }
         });
 
-        // Catch the 'lockPhones' broadcast from the server
         socket.on('lockPhones', () => {
-            // Disable the input box and change the placeholder text
             const wordInput = document.getElementById('wordInput');
+            const submitBtn = document.getElementById('submitBtn');
+            
             wordInput.disabled = true;
             wordInput.value = "";
             wordInput.placeholder = "TIME'S UP!";
+            submitBtn.disabled = true; // CSS :disabled handles the grey color
             
-            // Disable the submit button and make it look greyed out
-            const submitBtn = document.getElementById('submitBtn');
-            submitBtn.disabled = true;
-            submitBtn.style.backgroundColor = '#555';
-            submitBtn.style.cursor = 'not-allowed';
+            document.getElementById('status').innerText = "Pencils down! Look at the main screen.";
+            document.getElementById('status').style.color = "#ff4444";
+        });
 
-            // Update the status text
-            const statusText = document.getElementById('status');
-            statusText.innerText = "Pencils down! Look at the main screen.";
-            statusText.style.color = "#ff4444"; // Change text to bright red
+        socket.on('unlockPhones', () => {
+            const wordInput = document.getElementById('wordInput');
+            const submitBtn = document.getElementById('submitBtn');
+            
+            wordInput.disabled = false;
+            wordInput.value = "";
+            wordInput.placeholder = "TYPE WORD HERE...";
+            submitBtn.disabled = false; // CSS handles restoring the blue color
+            
+            document.getElementById('status').innerText = "Ready for the next round!";
+            document.getElementById('status').style.color = "#ffaa00";
         });
 
         // Trigger the 'Submit' button when Enter is pressed on the word input
@@ -314,26 +297,7 @@
             }
         });
 
-        // Catch the 'unlockPhones' broadcast to reset the UI for a new round
-        socket.on('unlockPhones', () => {
-            // Re-enable the input box and fix the placeholder
-            const wordInput = document.getElementById('wordInput');
-            wordInput.disabled = false;
-            wordInput.value = "";
-            wordInput.placeholder = "TYPE WORD HERE...";
-            
-            // Re-enable the submit button and restore its blue color
-            const submitBtn = document.getElementById('submitBtn');
-            submitBtn.disabled = false;
-            submitBtn.style.backgroundColor = '#007bff';
-            submitBtn.style.cursor = 'pointer';
-
-            // Clear the "Pencils down" warning
-            const statusText = document.getElementById('status');
-            statusText.innerText = "Ready for the next round!";
-            statusText.style.color = "#ffaa00"; // Back to original orange
-        });
-
+        
         socket.on('host_disconnected', () => {
             console.log("Host disconnected! Blacking out phone UI...");
             
